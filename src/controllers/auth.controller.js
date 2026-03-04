@@ -1,4 +1,4 @@
-import { createUser, findUserByUsername } from "../services/user.service.js";
+import { createUser, findUserByUsername, validatePassword } from "../services/user.service.js";
 
 const loginPage = (req, res) => {
     res.render("login", {
@@ -17,24 +17,47 @@ const registerPage = (req, res) => {
 const register = async (req, res) => {
     const { username, password, confirm, role } = req.body;
 
-    if (!username || !password || password !== confirm) {
-        return res.redirect("/register?errors=Invalid registration details");
+     if (!username || ! password || ! confirm) {
+    return res.redirect("/register?errors=All fields required");
     }
-
-    await createUser(username, password, role);
+   
+    if (password !== confirm) {
+    return res.redirect("/register?errors=Passwords do not match");
+    }
+    if (role !== "user" && role !== "admin") {
+    return res.redirect("/register?errors=Invalid role");
+    }
+      await createUser(username, password, role);
     res.redirect("/login");
-};
+ };
+
 
 const login = async (req, res) => {
     const { username, password } = req.body;
 
-    const user = await findUserByUsername(username);
+    if (!username || ! password) {
+        return res.redirect("/login?errors=All fields required");
+        }
 
-    if (!user || user.password !== password) {
+    const user = await findUserByUsername(username);
+    if (!user) {
         return res.redirect("/login?errors=Invalid credentials");
-    }
+        }
+        
+    const isValid = await validatePassword (password, user.password);
+        if (!isValid) {
+        return res.redirect("/login?errors=Invalid credentials");
+        }
+        
+        req.session.user = {
+        userId: user.userId,
+        username: user.username,
+        role: user.role
+        };
 
     res.redirect("/dashboard");
 };
+
+
 
 export default { loginPage, registerPage, register, login };
