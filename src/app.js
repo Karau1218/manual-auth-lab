@@ -17,10 +17,10 @@ saveUninitialized: true
 app.use((req, res, next) => {
 if (req.session.user) {
 req.user = req.session.user;
-} else {
-req.user = null;
-}
-next();
+    } else {
+        req.user = null;
+    }
+    next();
 });
 
 //view engine
